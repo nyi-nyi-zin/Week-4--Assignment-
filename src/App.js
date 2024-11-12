@@ -1,24 +1,71 @@
-import logo from './logo.svg';
-import './App.css';
+import Nav from "./components/Nav";
+import ShowNote from "./components/ShowNote";
+import AddNote from "./components/AddNote";
+import { useEffect, useState } from "react";
 
 function App() {
+  const [notes, setNote] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [mistake, setMistake] = useState(null);
+
+  useEffect(() => {
+    showData();
+  }, []);
+
+  const showData = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(
+        "https://note-project-efcd9-default-rtdb.firebaseio.com/note-project.json"
+      );
+      if (!response.ok) {
+        throw new Error("Something Went Wrong");
+      }
+      const notes = await response.json();
+
+      const modifiedNote = [];
+
+      for (const key in notes) {
+        modifiedNote.push({
+          id: key,
+          data: notes[key],
+        });
+      }
+
+      setNote(modifiedNote);
+    } catch (err) {
+      setMistake(err.message);
+    }
+    setLoading(false);
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <>
+      <Nav notes={notes} />
+      {loading && !mistake && (
+        <h1 style={{ textAlign: "center" }}>Getting Notes</h1>
+      )}
+      {mistake && !loading && (
+        <h1 style={{ textAlign: "center" }}>{mistake}</h1>
+      )}
+      {!loading && !mistake && (
+        <>
+          <AddNote showData={showData} />
+          {notes.map((note) => (
+            <ShowNote
+              key={note.id}
+              note={note}
+              showData={showData}
+              notes={notes}
+            />
+          ))}
+        </>
+      )}
+
+      {notes.length === 0 && !mistake && !loading && (
+        <h1 style={{ textAlign: "center" }}>Welcome my friend</h1>
+      )}
+    </>
   );
 }
 
